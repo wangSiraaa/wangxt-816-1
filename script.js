@@ -13,6 +13,8 @@ const MAX_CAPACITY = 100;
 let currentShift = 'morning';
 let currentSlotId = null;
 let slotsData = {};
+let compareSelectedSlots = [];
+let compareCurrentShift = 'morning';
 
 function generateSampleData() {
     const data = {};
@@ -370,6 +372,229 @@ function closeRankModal() {
     document.getElementById('rankModal').classList.remove('show');
 }
 
+function openCompareModal() {
+    compareSelectedSlots = [];
+    compareCurrentShift = 'morning';
+    document.getElementById('selectedCount').textContent = '0';
+    document.getElementById('doCompareBtn').disabled = true;
+    document.getElementById('compareResult').innerHTML = '<div class="compare-empty"><p>请选择两个格口开始对比</p></div>';
+    renderCompareGrid();
+    updateCompareShiftTabs();
+    document.getElementById('compareModal').classList.add('show');
+}
+
+function closeCompareModal() {
+    document.getElementById('compareModal').classList.remove('show');
+    compareSelectedSlots = [];
+}
+
+function updateCompareShiftTabs() {
+    document.querySelectorAll('.compare-shift-tab').forEach(tab => {
+        if (tab.dataset.shift === compareCurrentShift) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+}
+
+function renderCompareGrid() {
+    const container = document.getElementById('compareGridContainer');
+    const slots = slotsData[compareCurrentShift] || [];
+    
+    container.innerHTML = '';
+    
+    slots.forEach(slot => {
+        const level = calculateLevel(slot);
+        const percent = Math.min(Math.round((slot.pendingCount / MAX_CAPACITY) * 100), 100);
+        const isSelected = compareSelectedSlots.some(s => s.id === slot.id);
+        
+        const card = document.createElement('div');
+        card.className = `compare-slot-card level-${level} ${slot.isBlocked ? 'blocked' : ''} ${isSelected ? 'selected' : ''}`;
+        card.onclick = () => toggleCompareSlot(slot.id);
+        
+        card.innerHTML = `
+            <div class="compare-slot-num">格口 ${slot.slotNumber}</div>
+            <div class="compare-slot-dest">${slot.destination}</div>
+            <div class="compare-slot-count">${slot.pendingCount} 件</div>
+            <div class="compare-slot-status">${slot.isBlocked ? '已堵塞' : getLevelText(level)}</div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+function toggleCompareSlot(slotId) {
+    const slot = findSlot(slotId);
+    if (!slot) return;
+    
+    const index = compareSelectedSlots.findIndex(s => s.id === slotId);
+    
+    if (index > -1) {
+        compareSelectedSlots.splice(index, 1);
+    } else {
+        if (compareSelectedSlots.length >= 2) {
+            showToast('最多只能选择两个格口进行对比', 'warning');
+            return;
+        }
+        compareSelectedSlots.push(slot);
+    }
+    
+    document.getElementById('selectedCount').textContent = compareSelectedSlots.length;
+    document.getElementById('doCompareBtn').disabled = compareSelectedSlots.length !== 2;
+    renderCompareGrid();
+}
+
+function clearCompareSelection() {
+    compareSelectedSlots = [];
+    document.getElementById('selectedCount').textContent = '0';
+    document.getElementById('doCompareBtn').disabled = true;
+    document.getElementById('compareResult').innerHTML = '<div class="compare-empty"><p>请选择两个格口开始对比</p></div>';
+    renderCompareGrid();
+}
+
+function analyzeComparison(slotA, slotB) {
+    const result = {
+        recommendations: [],
+        warnings: [],
+        slotAScore: 0,
+        slotBScore: 0
+    };
+    
+    const levelA = calculateLevel(slotA);
+    const levelB = calculateLevel(slotB);
+    const percentA = (slotA.pendingCount / MAX_CAPACITY) * 100;
+    const percentB = (slotB.pendingCount / MAX_CAPACITY) * 100;
+    const levelOrder = { 'normal': 0, 'medium': 1, 'warning': 2, 'high': 3, 'critical': 4, 'blocked': 5 };
+    
+    result.slotAScore = levelOrder[levelA] * 20 + percentA * 0.5;
+    result.slotBScore = levelOrder[levelB] * 20 + percentB * 0.5;
+    
+    if (slotA.isBlocked && slotB.isBlocked) {
+        result.warnings.push('两个格口均处于堵塞状态，无法进行投递调整');
+    } else if (slotA.isBlocked) {
+        result.warnings.push(`格口 ${slotA.slotNumber} 处于堵塞状态，锁定中，无法投递也无法解除锁定`);
+    } else if (slotB.isBlocked) {
+        result.warnings.push(`格口 ${slotB.slotNumber} 处于堵塞状态，锁定中，无法投递也无法解除锁定`);
+    }
+    
+    if (slotA.destination === slotB.destination) {
+        result.recommendations.push('两个格口目的地相同，建议合并分拣任务');
+    }
+    
+    if (slotA.pendingCount > slotB.pendingCount * 1.5 && !slotA.isBlocked && !slotB.isBlocked) {
+        result.recommendations.push(`建议将格口 ${slotA.slotNumber} 的部分待分拣件调整到格口 ${slotB.slotNumber}，平衡负载`);
+    } else if (slotB.pendingCount > slotA.pendingCount * 1.5 && !slotA.isBlocked && !slotB.isBlocked) {
+        result.recommendations.push(`建议将格口 ${slotB.slotNumber} 的部分待分拣件调整到格口 ${slotA.slotNumber}，平衡负载`);
+    }
+    
+    if (slotA.shift !== slotB.shift) {
+        result.warnings.push('两个格口属于不同班次，跨班次调整需谨慎');
+    }
+    
+    if (result.recommendations.length === 0 && result.warnings.length === 0) {
+        result.recommendations.push('两个格口状态均衡，无需特殊调整');
+    }
+    
+    return result;
+}
+
+function doCompare() {
+    if (compareSelectedSlots.length !== 2) return;
+    
+    const slotA = compareSelectedSlots[0];
+    const slotB = compareSelectedSlots[1];
+    
+    const levelA = calculateLevel(slotA);
+    const levelB = calculateLevel(slotB);
+    const percentA = Math.min(Math.round((slotA.pendingCount / MAX_CAPACITY) * 100), 100);
+    const percentB = Math.min(Math.round((slotB.pendingCount / MAX_CAPACITY) * 100), 100);
+    
+    const analysis = analyzeComparison(slotA, slotB);
+    
+    let warningsHtml = '';
+    if (analysis.warnings.length > 0) {
+        warningsHtml = '<div class="compare-warnings"><h4><span class="warning-icon">⚠️</span> 注意事项</h4><ul>';
+        analysis.warnings.forEach(w => {
+            warningsHtml += `<li>${w}</li>`;
+        });
+        warningsHtml += '</ul></div>';
+    }
+    
+    let recsHtml = '<div class="compare-recommendations"><h4><span class="rec-icon">💡</span> 推荐调整方向</h4><ul>';
+    analysis.recommendations.forEach(r => {
+        recsHtml += `<li>${r}</li>`;
+    });
+    recsHtml += '</ul></div>';
+    
+    const resultHtml = `
+        <div class="compare-table-container">
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>对比项</th>
+                        <th>格口 ${slotA.slotNumber}</th>
+                        <th>格口 ${slotB.slotNumber}</th>
+                        <th>对比结果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>目的地</td>
+                        <td>${slotA.destination}</td>
+                        <td>${slotB.destination}</td>
+                        <td>${slotA.destination === slotB.destination ? '<span class="compare-same">相同</span>' : '<span class="compare-diff">不同</span>'}</td>
+                    </tr>
+                    <tr>
+                        <td>所属班次</td>
+                        <td>${getShiftText(slotA.shift)}</td>
+                        <td>${getShiftText(slotB.shift)}</td>
+                        <td>${slotA.shift === slotB.shift ? '<span class="compare-same">相同</span>' : '<span class="compare-diff">不同</span>'}</td>
+                    </tr>
+                    <tr>
+                        <td>待分拣量</td>
+                        <td class="${slotA.pendingCount > slotB.pendingCount ? 'compare-highlight' : ''}">${slotA.pendingCount} 件</td>
+                        <td class="${slotB.pendingCount > slotA.pendingCount ? 'compare-highlight' : ''}">${slotB.pendingCount} 件</td>
+                        <td>相差 ${Math.abs(slotA.pendingCount - slotB.pendingCount)} 件</td>
+                    </tr>
+                    <tr>
+                        <td>压力占比</td>
+                        <td class="level-${levelA}">${percentA}%</td>
+                        <td class="level-${levelB}">${percentB}%</td>
+                        <td>相差 ${Math.abs(percentA - percentB)}%</td>
+                    </tr>
+                    <tr>
+                        <td>压力等级</td>
+                        <td class="level-${levelA}">${getLevelText(levelA)}</td>
+                        <td class="level-${levelB}">${getLevelText(levelB)}</td>
+                        <td>${levelA === levelB ? '<span class="compare-same">相同</span>' : '<span class="compare-diff">不同</span>'}</td>
+                    </tr>
+                    <tr>
+                        <td>堵塞状态</td>
+                        <td class="${slotA.isBlocked ? 'blocked' : ''}">${slotA.isBlocked ? '已堵塞（锁定）' : '正常'}</td>
+                        <td class="${slotB.isBlocked ? 'blocked' : ''}">${slotB.isBlocked ? '已堵塞（锁定）' : '正常'}</td>
+                        <td>${slotA.isBlocked === slotB.isBlocked ? '<span class="compare-same">相同</span>' : '<span class="compare-diff">不同</span>'}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        ${warningsHtml}
+        ${recsHtml}
+        <div class="compare-score">
+            <div class="score-item">
+                <div class="score-label">格口 ${slotA.slotNumber} 综合压力分</div>
+                <div class="score-value">${analysis.slotAScore.toFixed(1)}</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">格口 ${slotB.slotNumber} 综合压力分</div>
+                <div class="score-value">${analysis.slotBScore.toFixed(1)}</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('compareResult').innerHTML = resultHtml;
+}
+
 function initEventListeners() {
     document.getElementById('shiftSelect').addEventListener('change', (e) => {
         changeShift(e.target.value);
@@ -384,6 +609,18 @@ function initEventListeners() {
     
     document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
     document.getElementById('closeRankModal').addEventListener('click', closeRankModal);
+    document.getElementById('compareBtn').addEventListener('click', openCompareModal);
+    document.getElementById('closeCompareModal').addEventListener('click', closeCompareModal);
+    document.getElementById('clearCompareBtn').addEventListener('click', clearCompareSelection);
+    document.getElementById('doCompareBtn').addEventListener('click', doCompare);
+    
+    document.querySelectorAll('.compare-shift-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            compareCurrentShift = e.target.dataset.shift;
+            updateCompareShiftTabs();
+            renderCompareGrid();
+        });
+    });
     
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
@@ -391,6 +628,9 @@ function initEventListeners() {
                 modal.classList.remove('show');
                 if (modal.id === 'detailModal') {
                     currentSlotId = null;
+                }
+                if (modal.id === 'compareModal') {
+                    compareSelectedSlots = [];
                 }
             }
         });
@@ -406,6 +646,7 @@ function initEventListeners() {
         if (e.key === 'Escape') {
             closeDetailModal();
             closeRankModal();
+            closeCompareModal();
         }
     });
 }

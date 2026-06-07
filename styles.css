@@ -356,6 +356,12 @@ body {
     max-width: 800px;
 }
 
+.modal-xlarge {
+    max-width: 1100px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 @keyframes slideUp {
     from {
         transform: translateY(30px);
@@ -583,6 +589,306 @@ body.fullscreen-mode .slot-card {
     padding: 8px;
 }
 
+.compare-shift-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.compare-shift-tab {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #a0aec0;
+    transition: all 0.3s ease;
+}
+
+.compare-shift-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.compare-shift-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.compare-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.compare-slot-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    text-align: center;
+}
+
+.compare-slot-card:hover {
+    transform: scale(1.03);
+}
+
+.compare-slot-card.selected {
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3);
+}
+
+.compare-slot-card.level-normal {
+    background: linear-gradient(135deg, rgba(72, 187, 120, 0.3) 0%, rgba(72, 187, 120, 0.1) 100%);
+    border-color: rgba(72, 187, 120, 0.5);
+}
+
+.compare-slot-card.level-medium {
+    background: linear-gradient(135deg, rgba(66, 153, 225, 0.3) 0%, rgba(66, 153, 225, 0.1) 100%);
+    border-color: rgba(66, 153, 225, 0.5);
+}
+
+.compare-slot-card.level-warning {
+    background: linear-gradient(135deg, rgba(236, 201, 75, 0.3) 0%, rgba(236, 201, 75, 0.1) 100%);
+    border-color: rgba(236, 201, 75, 0.5);
+}
+
+.compare-slot-card.level-high {
+    background: linear-gradient(135deg, rgba(237, 137, 54, 0.3) 0%, rgba(237, 137, 54, 0.1) 100%);
+    border-color: rgba(237, 137, 54, 0.5);
+}
+
+.compare-slot-card.level-critical {
+    background: linear-gradient(135deg, rgba(245, 101, 101, 0.3) 0%, rgba(245, 101, 101, 0.1) 100%);
+    border-color: rgba(245, 101, 101, 0.5);
+}
+
+.compare-slot-card.blocked {
+    background: linear-gradient(135deg, rgba(113, 128, 150, 0.4) 0%, rgba(113, 128, 150, 0.2) 100%);
+    border-color: #f56565;
+}
+
+.compare-slot-num {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.compare-slot-dest {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.compare-slot-count {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.compare-slot-status {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.compare-selection-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.compare-selection-info span {
+    font-size: 14px;
+}
+
+.compare-selection-info strong {
+    color: #00d4ff;
+}
+
+.compare-result {
+    margin-top: 16px;
+}
+
+.compare-empty {
+    text-align: center;
+    padding: 40px;
+    color: #a0aec0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.compare-table-container {
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+.compare-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.compare-table th,
+.compare-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compare-table th {
+    font-size: 13px;
+    color: #a0aec0;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.compare-table td {
+    font-size: 14px;
+}
+
+.compare-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.compare-same {
+    color: #48bb78;
+    font-weight: 600;
+}
+
+.compare-diff {
+    color: #ed8936;
+    font-weight: 600;
+}
+
+.compare-highlight {
+    color: #f56565;
+    font-weight: 700;
+}
+
+.compare-warnings {
+    background: rgba(237, 137, 54, 0.1);
+    border: 1px solid rgba(237, 137, 54, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.compare-warnings h4 {
+    color: #ed8936;
+    margin-bottom: 12px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.warning-icon {
+    font-size: 16px;
+}
+
+.compare-warnings ul {
+    list-style: none;
+    padding: 0;
+}
+
+.compare-warnings li {
+    padding: 6px 0;
+    color: #ecc94b;
+    font-size: 13px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.compare-warnings li::before {
+    content: '•';
+    position: absolute;
+    left: 8px;
+    color: #ed8936;
+}
+
+.compare-recommendations {
+    background: rgba(72, 187, 120, 0.1);
+    border: 1px solid rgba(72, 187, 120, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.compare-recommendations h4 {
+    color: #48bb78;
+    margin-bottom: 12px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rec-icon {
+    font-size: 16px;
+}
+
+.compare-recommendations ul {
+    list-style: none;
+    padding: 0;
+}
+
+.compare-recommendations li {
+    padding: 6px 0;
+    color: #68d391;
+    font-size: 13px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.compare-recommendations li::before {
+    content: '→';
+    position: absolute;
+    left: 4px;
+    color: #48bb78;
+}
+
+.compare-score {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.score-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+
+.score-label {
+    font-size: 12px;
+    color: #a0aec0;
+    margin-bottom: 8px;
+}
+
+.score-value {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #00d4ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 @media (max-width: 1200px) {
     .grid-container {
         grid-template-columns: repeat(6, 1fr);
@@ -590,6 +896,10 @@ body.fullscreen-mode .slot-card {
     
     .stats-bar {
         grid-template-columns: repeat(5, 1fr);
+    }
+    
+    .compare-slot-grid {
+        grid-template-columns: repeat(6, 1fr);
     }
 }
 
@@ -611,6 +921,14 @@ body.fullscreen-mode .slot-card {
     .header-right {
         flex-wrap: wrap;
         justify-content: center;
+    }
+    
+    .compare-slot-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .compare-score {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -638,5 +956,15 @@ body.fullscreen-mode .slot-card {
     
     .detail-info {
         grid-template-columns: 1fr;
+    }
+    
+    .compare-slot-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .compare-table th,
+    .compare-table td {
+        padding: 8px 10px;
+        font-size: 12px;
     }
 }
